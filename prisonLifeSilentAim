@@ -82,9 +82,8 @@ local UICorner = Instance.new("UICorner")
 RunService.Heartbeat:Connect(function(deltaTime)
     task.wait(deltaTime ^ 2)
         wait()
+        target = getClosestPlayerToCursor(sharedfov)
         circle.Position = uis:GetMouseLocation()
-        target = getClosestPlayerToCursor(500)
-        BillboardGui.Parent = target.Character.Head
         BillboardGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
         BillboardGui.Active = true
         BillboardGui.AlwaysOnTop = true
@@ -96,16 +95,19 @@ RunService.Heartbeat:Connect(function(deltaTime)
 
         UICorner.CornerRadius = UDim.new(0.5, 0)
         UICorner.Parent = Frame
+        if target then
+            BillboardGui.Parent = target.Character.Head
+        end
 end)
 
 
 
 local old -- old function stored
         old = hookfunction(func, function(p2, p3) -- function is hook
+        repeat wait() until target ~= nil
+        
         local mousePos = target.Character.Head.Position
         p2 = p2 -- starting pos
         p3 = mousePos -- where the silent aim shoot
         return old(p2, p3)-- return old func and new args
-
-
 end)
