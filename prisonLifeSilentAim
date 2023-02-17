@@ -1,0 +1,111 @@
+local sharedfov = 50
+
+local func --defines function to store (v)
+for i,v in pairs(getgc()) do -- loop through memory
+    if type(v) == "function" and islclosure(v) and not is_synapse_function(v) then
+        local consts = getconstants(v)
+        if table.find(consts, "Bullets") and table.find(consts, "formFactor") and table.find(consts, "RayObject") and table.find(consts, 0.2) then --find the func
+            func = v --function is defined
+            --print(debug.getinfo(v).name)
+        end
+    end
+end
+
+local function indexExists(object, index)
+    local _, value = pcall(function() return object[index] end)
+    return value
+end
+
+
+local plr = game.Players.LocalPlayer
+local mouse = plr:GetMouse()
+local uis = game:GetService("UserInputService")
+local camera = game.Workspace.CurrentCamera
+local wtvp = camera.WorldToViewportPoint
+local players = game:GetService("Players")
+local function get_character(player) return indexExists(player, 'Character') end
+local function get_mouse_location() return uis:GetMouseLocation() end
+local function is_alive(player) return player.Character and player.Character:FindFirstChild('Humanoid') and player.Character:FindFirstChild('Humanoid').Health > 0 end
+
+
+
+
+
+
+local function getClosestPlayerToCursor(fov)
+
+    local maxDistance = fov or math.huge
+
+    local closestPlayer = nil
+    local closestPlayerDistance = math.huge
+
+    for _, player in pairs(players:GetPlayers()) do
+
+        if player ~= plr and player.Team ~= plr.Team and get_character(player) and is_alive(player) then
+            local pos, on_screen = wtvp(camera, player.Character.Head.Position)
+
+            if not on_screen then continue end
+
+            local distance = (get_mouse_location() - Vector2.new(pos.X, pos.Y)).magnitude
+            --print(closestPlayerDistance)
+
+            if distance <= maxDistance and distance < closestPlayerDistance then
+                closestPlayer = player
+                closestPlayerDistance = distance
+            end
+        end
+    end
+
+    return closestPlayer
+end
+
+local target = nil
+local RunService = game:GetService("RunService")
+
+local circle = Drawing.new('Circle')
+circle.Thickness = 2
+circle.NumSides = 12
+circle.Radius = sharedfov or 40
+circle.Filled = false
+circle.Transparency = 1
+circle.Color = Color3.new(1, 0, 0.384313)
+circle.Visible = true
+
+
+local BillboardGui = Instance.new("BillboardGui")
+local Frame = Instance.new("Frame")
+local UICorner = Instance.new("UICorner")
+
+
+
+
+RunService.Heartbeat:Connect(function(deltaTime)
+    task.wait(deltaTime ^ 2)
+        wait()
+        circle.Position = uis:GetMouseLocation()
+        target = getClosestPlayerToCursor(500)
+        BillboardGui.Parent = target.Character.Head
+        BillboardGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        BillboardGui.Active = true
+        BillboardGui.AlwaysOnTop = true
+        BillboardGui.LightInfluence = 1.000
+        BillboardGui.Size = UDim2.new(1, 0, 1, 0)
+        Frame.Parent = BillboardGui
+        Frame.BackgroundColor3 = Color3.fromRGB(255, 3, 7)
+        Frame.Size = UDim2.new(1, 0, 1, 0)
+
+        UICorner.CornerRadius = UDim.new(0.5, 0)
+        UICorner.Parent = Frame
+end)
+
+
+
+local old -- old function stored
+        old = hookfunction(func, function(p2, p3) -- function is hook
+        local mousePos = target.Character.Head.Position
+        p2 = p2 -- starting pos
+        p3 = mousePos -- where the silent aim shoot
+        return old(p2, p3)-- return old func and new args
+
+
+end)
